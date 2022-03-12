@@ -66,8 +66,8 @@ class GUIClass(tk.Frame):
         self.PCBs = [] #List containing PCBS
         
         #Options for UI
-        self.cWidth = 500 #Width of canvas
-        self.cHeight = 500 #Height of canvas
+        self.cWidth = 800 #Width of canvas
+        self.cHeight = 800 #Height of canvas
         
         self.backgroundColor = "#000000" #Black
         
@@ -77,11 +77,12 @@ class GUIClass(tk.Frame):
     
     def getFile(self):
         file = tkd.askopenfile(mode='r')
+        #If no file was selected do not continue
         if file == None:
             return
-        fileEnding = file.name[len(file.name)-9:len(file.name)] 
-        
-        if fileEnding != "kicad_pcb" or file == None:
+        fileEnding = file.name[len(file.name)-9:len(file.name)]  
+        #Check if it is valid filetype
+        if fileEnding != "kicad_pcb":
             self.selectFileResult.config(text="Invalid file type \n must be kicad_pcb",fg='#ff0000')
         else:
             self.selectFileResult.config(text="Found kicad_pcb file",fg='#00ff00')
@@ -174,8 +175,10 @@ class GUIClass(tk.Frame):
         self.selectFileResult.pack()
         
     def drawPCB(self,pcb):
+        #Draw visual options
         border = 50 #Border area not used for drawing
-        
+        padColor = "#00ff00"
+        holeColor = "#ff0000"
         #This part is for figuring out how to scale between screen and real measurements takes rotation into account
         minx = 0
         maxx = 0
@@ -200,18 +203,23 @@ class GUIClass(tk.Frame):
             #We use a rotation matrix to rotate pads
             cx = border + (pad.x*np.cos(-np.pi*pad.ang/180)-pad.y*np.sin(-np.pi*pad.ang/180)+pcb.components[pad.component].x-minx)*scale #Canvas x center
             cy = border + (pad.x*np.sin(-np.pi*pad.ang/180)+pad.y*np.cos(-np.pi*pad.ang/180)+pcb.components[pad.component].y-miny)*scale #Canvas y center
+            #Draws pad depending on shape
             if pad.shape == "rect":
-                pass
+                #!!!TODO!!! add rotation
+                w = pad.width*0.5*scale
+                h = pad.height*0.5*scale
+                self.canvas.create_rectangle(cx-w,cy-h,cx+w,cy+h,fill=padColor) #Tegner drill hole
             elif pad.shape == "oval":
                 pass
             elif pad.shape == "circle":
-                pass
+                r = pad.width*scale*0.5 #Convert to radius from diameter
+                self.canvas.create_oval(cx-r,cy-r,cx+r,cy+r,fill=padColor) #Tegner drill hole
             else:
                 print("Error unrecognized pad shape:",pad.shape)
             #Draws the drill hole
             drillDraw = pad.drill*scale*0.5 #Converts to radius
             
-            self.canvas.create_oval(cx-drillDraw,cy-drillDraw,cx+drillDraw,cy+drillDraw,fill="#ff0000") #Tegner drill hole
+            self.canvas.create_oval(cx-drillDraw,cy-drillDraw,cx+drillDraw,cy+drillDraw,fill=holeColor) #Tegner drill hole
 
 def main():
     GUI = GUIClass()    
